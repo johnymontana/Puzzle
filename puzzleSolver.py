@@ -3,13 +3,27 @@ import copy
 
 class PuzzleNode(object):
 	
-	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows):
+	#def __init__(self, a_state, a_parent, a_action, a_columns, a_rows):
+	#	self.state = copy.deepcopy(a_state)
+	#	self.parent = a_parent
+	#	self.action = copy.copy(a_action)
+	#	self.columns = a_columns
+	#	self.rows = a_rows
+	#	self.pathCost = int(0)
+	#	self.pathCost = self.parent.pathCost+1
+	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost):
 		self.state = copy.deepcopy(a_state)
 		self.parent = a_parent
 		self.action = copy.copy(a_action)
 		self.columns = a_columns
 		self.rows = a_rows
-
+		self.pathCost = a_cost+1
+		self.h1 = calcH1()
+		self.h2 = calcH2()
+	def calcH1(self):
+		for i in range(len(self.state))
+			for j in range(len(self.state[i]))
+						
 	def getAllMoves(self): #return a list of states? or PuzzleNodes?
 		moves = [] #gonna need to compute the zero's coordinates, as a list (x,y)
 			   #gonna need zeroIsOnLeft,Right,Top,Bottom methods
@@ -144,7 +158,7 @@ class Problem(object):
 		
 		for move in legalMoves:
 			print 'new move:' + move
-			newNodes.append(PuzzleNode(self.getResult(a_node, move), copy.deepcopy(a_node), copy.copy(move), self.columns, self.rows))
+			newNodes.append(PuzzleNode(self.getResult(a_node, move), a_node, copy.copy(move), self.columns, self.rows, copy.copy(a_node.pathCost)))
 		print 'newNodes from allLegalMoves:'
 		for node in newNodes:
 			print node.state
@@ -174,6 +188,7 @@ class Problem(object):
 			tmpNode = queue.get()
 			if (self.goalTest(tmpNode.state)):
 				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost)
 				self.printPathToNode(tmpNode)	
 				return True
 			for newNode in self.getNewNodes(tmpNode):
@@ -183,8 +198,55 @@ class Problem(object):
 				if not self.haveVisited(visited, newNode.state):
 					print 'adding a node to the queue'
 					visited.append(newNode)
-					queue.put(copy.deepcopy(newNode))			 					
+					queue.put(copy.deepcopy(newNode))
 
+	def DFS(self, a_node):
+		stack = []
+		stack.append(a_node)
+
+		visited = []
+		visited.append(a_node)
+		print 'starting the while loop'
+		while len(stack)>0:
+			print 'in the while loop'
+			tmpNode = stack.pop()
+			if (self.goalTest(tmpNode.state)):
+				print 'PATH FOUND'
+				self.printPathToNode(tmpNode)	
+				return True
+			for newNode in self.getNewNodes(tmpNode):
+				#need to write method in Problem that will create instances
+				# of PuzzleNode for all legal moves given tmpNode
+				print 'in the for get new nodes loop'
+				if not self.haveVisited(visited, newNode.state):
+					print 'adding a node to the queue'
+					visited.append(newNode)
+					stack.append(newNode)
+
+	def UCS(self, a_node):
+		pQueue = Queue.PriorityQueue()
+		pQueue.put((0, a_node))
+		visited = []
+		visited.append(a_node)
+		print 'starting the while loop'
+		while not pQueue.empty():
+			print 'in the while loop'
+			tmpTuple = pQueue.get()
+			#print tmpTuple
+			tmpNode = tmpTuple[1]
+			if (self.goalTest(tmpNode.state)):
+				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost)
+				self.printPathToNode(tmpNode)	
+				return True
+			for newNode in self.getNewNodes(tmpNode):
+				#need to write method in Problem that will create instances
+				# of PuzzleNode for all legal moves given tmpNode
+				print 'in the for get new nodes loop'
+				if not self.haveVisited(visited, newNode.state):
+					print 'adding a node to the queue'
+					visited.append(newNode)
+					pQueue.put((newNode.pathCost, copy.deepcopy(newNode)))
 columns = 3
 rows = 3
 file = open('testData.dat')
@@ -213,7 +275,7 @@ print 'output_code' + output_code
 print puzzle
 
 myPuzzle = Problem(rows, columns, puzzle)
-newNode = PuzzleNode(puzzle, None, None, columns, rows)
+newNode = PuzzleNode(puzzle, None, None, columns, rows, 0)
 print 'puzzleNode state:'
 print newNode.state
 #myNewMoves=[]
@@ -225,5 +287,6 @@ print newNode.state
 #secondNode = PuzzleNode(myPuzzle.getResult(newNode, 'R'), newNode, 'R', columns, rows)
 #secondNode.printState()
 #print secondNode.getAllMoves()
-myPuzzle.BFS(newNode)
+myPuzzle.UCS(newNode)
+
 
