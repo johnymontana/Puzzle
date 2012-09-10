@@ -11,19 +11,58 @@ class PuzzleNode(object):
 	#	self.rows = a_rows
 	#	self.pathCost = int(0)
 	#	self.pathCost = self.parent.pathCost+1
-	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost):
+	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost, a_goalState):
 		self.state = copy.deepcopy(a_state)
 		self.parent = a_parent
 		self.action = copy.copy(a_action)
 		self.columns = a_columns
 		self.rows = a_rows
+
+		self.goalState = a_goalState
 		self.pathCost = a_cost+1
-		self.h1 = calcH1()
-		self.h2 = calcH2()
+		self.h1 = self.calcH1()
+		self.h2 = self.calcH2()
 	def calcH1(self):
-		for i in range(len(self.state))
-			for j in range(len(self.state[i]))
-						
+		count=int(0)
+		for i in range(len(self.state)):
+			for j in range(len(self.state[i])):
+				if not self.state[i][j]==self.goalState[i][j]:
+					count = count + 1
+		return count
+	def calcDist(self, tiles):
+		count=int(0)
+		tmp = int(0)
+		iDist = int(0)
+		jDist = int(0)
+		for tile in tiles:
+			if not tile[0]==0:
+				iDist = abs(int((tile[1]-1)/self.rows)-tile[2])
+				jDist = abs((tile[1]%self.columns-1)-tile[3])
+				count = count + iDist + jDist
+				print 'h2 calc tile != zero'
+				print 'iDist:' + str(iDist)
+				print 'jDist:' + str(jDist)
+			else:
+				iDist = abs((self.rows-1)-tile[2])
+				jDist = abs((self.columns-1)-tile[3])
+				count = count + iDist + jDist
+				print 'h2 calc tile = zero'
+				print 'iDist:' + str(iDist)
+				print 'jDist:' + str(jDist)
+		print 'h2=' + str(count)
+		return count
+	def calcH2(self):
+		count=int(0)
+		tiles = []
+		for i in range(len(self.state)):
+			for j in range(len(self.state[i])):
+				if not self.state[i][j]==self.goalState[i][j]:
+					coord = (self.goalState[i][j], self.state[i][j], i, j)
+					tiles.append(coord)
+		count = self.calcDist(tiles)
+		print 'tiles for h2 calc:'
+		print tiles
+		return count			
 	def getAllMoves(self): #return a list of states? or PuzzleNodes?
 		moves = [] #gonna need to compute the zero's coordinates, as a list (x,y)
 			   #gonna need zeroIsOnLeft,Right,Top,Bottom methods
@@ -88,7 +127,10 @@ class PuzzleNode(object):
 		print self.state
 	
 class Problem(object):
-	def __init__(self, a_rows, a_columns, a_state):
+	def __init__(self, a_rows, a_columns, a_state, a_algoCode, a_hCode, a_outputCode):
+		self.algoCode = a_algoCode
+		self.hCode = a_hCode
+		self.outputCode = a_outputCode
 		self.rows = a_rows
 		self.columns = a_columns
 		self.state = copy.deepcopy(a_state)
@@ -158,7 +200,7 @@ class Problem(object):
 		
 		for move in legalMoves:
 			print 'new move:' + move
-			newNodes.append(PuzzleNode(self.getResult(a_node, move), a_node, copy.copy(move), self.columns, self.rows, copy.copy(a_node.pathCost)))
+			newNodes.append(PuzzleNode(self.getResult(a_node, move), a_node, copy.copy(move), self.columns, self.rows, copy.copy(a_node.pathCost),self.goalState))
 		print 'newNodes from allLegalMoves:'
 		for node in newNodes:
 			print node.state
@@ -223,8 +265,55 @@ class Problem(object):
 					visited.append(newNode)
 					stack.append(newNode)
 
-	def UCS(self, a_node):
+	def GBFS(self, a_node):
 		pQueue = Queue.PriorityQueue()
+		pQueue.put((a_node.h2, a_node))
+		visited = []
+		visited.append(a_node)
+		print 'starting the while loop'
+		while not pQueue.empty():
+			print 'in the while loop'
+			tmpTuple = pQueue.get()
+			print tmpTuple
+			tmpNode = tmpTuple[1]
+			if (self.goalTest(tmpNode.state)):
+				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost)
+				self.printPathToNode(tmpNode)	
+				return True
+			for newNode in self.getNewNodes(tmpNode):
+				#need to write method in Problem that will create instances
+				# of PuzzleNode for all legal moves given tmpNode
+				print 'in the for get new nodes loop'
+				if not self.haveVisited(visited, newNode.state):
+					print 'adding a node to the queue'
+					visited.append(newNode)
+					pQueue.put((newNode.h2, copy.deepcopy(newNode)))
+	def AStar(self, a_node):
+		pQueue = Queue.PriorityQueue()
+		pQueue.put((a_node.h2, a_node))
+		visited = []
+		visited.append(a_node)
+		print 'starting the while loop'
+		while not pQueue.empty():
+			print 'in the while loop'
+			tmpTuple = pQueue.get()
+			print tmpTuple
+			tmpNode = tmpTuple[1]
+			if (self.goalTest(tmpNode.state)):
+				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost)
+				self.printPathToNode(tmpNode)	
+				return True
+			for newNode in self.getNewNodes(tmpNode):
+				#need to write method in Problem that will create instances
+				# of PuzzleNode for all legal moves given tmpNode
+				print 'in the for get new nodes loop'
+				if not self.haveVisited(visited, newNode.state):
+					print 'adding a node to the queue'
+					visited.append(newNode)
+					pQueue.put((newNode.h2+newNode.pathCost, copy.deepcopy(newNode)))
+	def UCS(self, a_node):
 		pQueue.put((0, a_node))
 		visited = []
 		visited.append(a_node)
@@ -247,6 +336,14 @@ class Problem(object):
 					print 'adding a node to the queue'
 					visited.append(newNode)
 					pQueue.put((newNode.pathCost, copy.deepcopy(newNode)))
+
+
+	def Solve(self, a_node):
+		if 
+###################
+#   BEGIN MAIN    #
+###################
+
 columns = 3
 rows = 3
 file = open('testData.dat')
@@ -274,8 +371,8 @@ print 'heuristic_code:' + heuristic_code
 print 'output_code' + output_code
 print puzzle
 
-myPuzzle = Problem(rows, columns, puzzle)
-newNode = PuzzleNode(puzzle, None, None, columns, rows, 0)
+myPuzzle = Problem(rows, columns, puzzle, algo_code, heuristic_code, output_code)
+newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState)
 print 'puzzleNode state:'
 print newNode.state
 #myNewMoves=[]
@@ -287,6 +384,6 @@ print newNode.state
 #secondNode = PuzzleNode(myPuzzle.getResult(newNode, 'R'), newNode, 'R', columns, rows)
 #secondNode.printState()
 #print secondNode.getAllMoves()
-myPuzzle.UCS(newNode)
+myPuzzle.Solve(newNode)
 
 
