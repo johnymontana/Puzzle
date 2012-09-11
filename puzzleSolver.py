@@ -20,7 +20,7 @@ class PuzzleNode(object):
 	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost, a_goalState, a_hCode):
 		self.hCode = a_hCode
 		self.parent = a_parent
-		self.state = copy.deepcopy(a_state)
+		self.state = self.deepish_copy(a_state)
 		self.action = copy.copy(a_action)
 		self.columns = a_columns
 		self.rows = a_rows
@@ -30,6 +30,12 @@ class PuzzleNode(object):
 		
 		#self.h1 = self.calcH1()
 		#self.h2 = self.calcH2()
+	
+	def deepish_copy(self, a_state):
+		newState = []
+		for i in a_state:
+			newState.append(list(i))
+		return newState
 	def heuristic(self):
 		if self.hCode == 1:
 			return self.calcH1()
@@ -180,12 +186,16 @@ class Problem(object):
 		return True
 	#def printState(a_state):
 		#print a state in the correct format
-
+	def deepish_copy(self, a_state):
+		newState = []
+		for i in a_state:
+			newState.append(list(i))
+		return newState
 
 
 	def getResult(self, a_node, a_action):
 		#return a new state given a_state and a_action
-		newState=copy.deepcopy(a_node.state)
+		newState=self.deepish_copy(a_node.state)
 		zeroCoord = a_node.zeroPos()
 		zeroI = copy.copy(zeroCoord[0])
 		zeroJ = copy.copy(zeroCoord[1])
@@ -236,7 +246,8 @@ class Problem(object):
 			while len(movesStack)>0:
 				#print move
 				move = movesStack.pop()
-				print move
+				print move,
+			print
 		#for move in movesStack:
 		#	print move
 		if self.outputCode > 1:
@@ -258,10 +269,13 @@ class Problem(object):
 		return True		
 	def BFS(self, a_node):
 		queue = Queue.Queue()
-		queue.put(copy.deepcopy(a_node))
+		queue.put(a_node)
 
-		visited = []
-		visited.append(a_node)
+		#visited = []
+		#visited.append(a_node)
+		
+		closedSet = set()
+		closedSet.add(self.flatten(a_node.state))
 		#print 'starting the while loop'
 		while not queue.empty():
 			#print 'in the while loop'
@@ -275,18 +289,22 @@ class Problem(object):
 				#need to write method in Problem that will create instances
 				# of PuzzleNode for all legal moves given tmpNode
 				#print 'in the for get new nodes loop'
-				if not self.haveVisited(visited, newNode.state):
+				#if not self.haveVisited(visited, newNode.state):
+				if not self.beenTo(closedSet, self.flatten(newNode.state)):
 					#print 'adding a node to the queue'
-					visited.append(newNode)
-					queue.put(copy.deepcopy(newNode))
+					#visited.append(newNode)
+					closedSet.add(self.flatten(newNode.state))
+					queue.put(newNode)
 		print 'No path found!'
 
 	def DFS(self, a_node):
 		stack = []
 		stack.append(a_node)
 
-		visited = []
-		visited.append(a_node)
+		closedSet = set()
+		closedSet.add(self.flatten(a_node.state))
+		#visited = []
+		#visited.append(a_node)
 		#print 'starting the while loop'
 		while len(stack)>0:
 			#print 'in the while loop'
@@ -300,17 +318,22 @@ class Problem(object):
 				#need to write method in Problem that will create instances
 				# of PuzzleNode for all legal moves given tmpNode
 				#print 'in the for get new nodes loop'
-				if not self.haveVisited(visited, newNode.state):
+				#if not self.haveVisited(visited, newNode.state):
+				if not self.beenTo(closedSet, self.flatten(newNode.state)):
 					#print 'adding a node to the queue'
-					visited.append(newNode)
+					#visited.append(newNode)
+					closedSet.add(self.flatten(newNode.state))
 					stack.append(newNode)
 		print 'No Path found!'
 
 	def GBFS(self, a_node):
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((a_node.heuristic(), a_node))
-		visited = []
-		visited.append(a_node)
+		#visited = []
+		#visited.append(a_node)
+		
+		closedSet = set()
+		closedSet.add(self.flatten(a_node.state))
 		#print 'starting the while loop'
 		while not pQueue.empty():
 			#print 'in the while loop'
@@ -326,17 +349,75 @@ class Problem(object):
 				#need to write method in Problem that will create instances
 				# of PuzzleNode for all legal moves given tmpNode
 				#print 'in the for get new nodes loop'
-				if not self.haveVisited(visited, newNode.state):
+				#if not self.haveVisited(visited, newNode.state):
+				if not self.beenTo(closedSet, self.flatten(newNode.state)):
 					#print 'adding a node to the queue'
-					visited.append(newNode)
-					pQueue.put((newNode.heuristic(), copy.deepcopy(newNode)))
+					#visited.append(newNode)
+					closedSet.add(self.flatten(newNode.state))
+					pQueue.put((newNode.heuristic(), newNode))
 		print 'No Path found!'
 
 	def AStar(self, a_node):
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((a_node.heuristic(), a_node))
-		visited = []
-		visited.append(a_node)
+		#visited = []
+		#visited.append(a_node)
+		#print 'starting the while loop'
+		closedSet = set()
+		closedSet.add(self.flatten(a_node.state))
+	
+		while not pQueue.empty():
+			#print 'in the while loop'
+			tmpTuple = pQueue.get()
+			#print tmpTuple
+			tmpNode = tmpTuple[1]
+			if (self.goalTest(tmpNode.state)):
+				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost-1)
+				self.printPathToNode(tmpNode)	
+				return True
+			for newNode in self.getNewNodes(tmpNode):
+				#need to write method in Problem that will create instances
+				# of PuzzleNode for all legal moves given tmpNode
+				#print 'in the for get new nodes loop'
+				#if not self.haveVisited(visited, newNode.state):
+				if not self.beenTo(closedSet, self.flatten(newNode.state)):
+					#print 'adding a node to the queue'
+					#visited.append(newNode)
+					closedSet.add(self.flatten(newNode.state))
+					
+					h=newNode.heuristic()
+					pQueue.put((h+newNode.pathCost, newNode))
+		print 'No path found!'
+	#def list_or_tuple(x):
+	#	return isinstance(x, (list, tuple))
+	#
+	#def flatten(sequence, to_expand=list_or_tuple):
+	#	for item in sequence:
+	#		if to_expand(item):
+	#			for subitem in flatten(item, to_expand):
+	#				yield subitem
+	#			else:
+	#				yield item
+	def flatten(self, aState):
+		newTuple=()
+		for i in range(len(aState)):
+			for j in range(len(aState[i])):
+				newTuple +=(aState[i][j],)
+		return newTuple 
+	def beenTo(self, aSet, aState):
+		if aState in aSet:
+			return True
+		else:
+			return False
+	def UCS(self, a_node):
+		pQueue = Queue.PriorityQueue()
+		pQueue.put((0, a_node))
+		#visited = []
+		#visited.append(a_node)
+		
+		closedSet = set()
+		closedSet.add(self.flatten(a_node.state))
 		#print 'starting the while loop'
 		while not pQueue.empty():
 			#print 'in the while loop'
@@ -352,37 +433,12 @@ class Problem(object):
 				#need to write method in Problem that will create instances
 				# of PuzzleNode for all legal moves given tmpNode
 				#print 'in the for get new nodes loop'
-				if not self.haveVisited(visited, newNode.state):
+				#if not self.haveVisited(visited, newNode.state):
 					#print 'adding a node to the queue'
-					visited.append(newNode)
-					h=newNode.heuristic()
-					pQueue.put((h+newNode.pathCost, newNode))
-		print 'No path found!'
-
-	def UCS(self, a_node):
-		pQueue = Queue.PriorityQueue()
-		pQueue.put((0, a_node))
-		visited = []
-		visited.append(a_node)
-		#print 'starting the while loop'
-		while not pQueue.empty():
-			#print 'in the while loop'
-			tmpTuple = pQueue.get()
-			#print tmpTuple
-			tmpNode = tmpTuple[1]
-			if (self.goalTest(tmpNode.state)):
-				print 'PATH FOUND'
-				print 'pathcost: ' + str(tmpNode.pathCost)
-				self.printPathToNode(tmpNode)	
-				return True
-			for newNode in self.getNewNodes(tmpNode):
-				#need to write method in Problem that will create instances
-				# of PuzzleNode for all legal moves given tmpNode
-				#print 'in the for get new nodes loop'
-				if not self.haveVisited(visited, newNode.state):
-					#print 'adding a node to the queue'
-					visited.append(newNode)
-					pQueue.put((newNode.pathCost, copy.deepcopy(newNode)))
+				if not self.beenTo(closedSet, self.flatten(newNode.state)):
+					#visited.append(newNode)
+					closedSet.add(self.flatten(newNode.state))
+					pQueue.put((newNode.pathCost, newNode))
 		print 'No Path found!'
 
 	def Solve(self, a_node):
