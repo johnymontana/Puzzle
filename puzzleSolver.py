@@ -1,6 +1,6 @@
 # puzzleSolver.py
 # takes 1 command line argument which is the name of a textfile in the same directory containing a text representation of the m*n tile puzzle
-# for example: python puzzleSolver.py textFile.dat
+# for example: python puzzleSolver.py testData.dat
 #
 # William Lyon
 # CSCI 555
@@ -15,7 +15,7 @@ import Queue
 import copy
 import sys
 
-class PuzzleNode(object):
+class PuzzleNode(object):	# represents a Node containing (state, parent, action and cost)
 	
 	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost, a_goalState, a_hCode):
 		self.hCode = a_hCode
@@ -31,24 +31,25 @@ class PuzzleNode(object):
 		#self.h1 = self.calcH1()
 		#self.h2 = self.calcH2()
 	
-	def deepish_copy(self, a_state):
+	def deepish_copy(self, a_state):	# more efficent method to copy a list of lists
 		newState = []
 		for i in a_state:
 			newState.append(list(i))
 		return newState
-	def heuristic(self):
+
+	def heuristic(self):			# returns heuristic value for Node
 		if self.hCode == 1:
 			return self.calcH1()
 		if self.hCode == 2:
 			return self.calcH2()
-	def calcH1(self):
+	def calcH1(self):			# calc heuristic 1 (number of out of order tiles)
 		count=int(0)
 		for i in range(len(self.state)):
 			for j in range(len(self.state[i])):
 				if not self.state[i][j]==self.goalState[i][j]:
 					count = count + 1
 		return count
-	def calcDist(self, tiles):
+	def calcDist(self, tiles):		# calculates manhattan distance of all tiles out of order
 		count=int(0)
 		tmp = int(0)
 		iDist = int(0)
@@ -70,7 +71,7 @@ class PuzzleNode(object):
 				#print 'jDist:' + str(jDist)
 		#print 'h2=' + str(count)
 		return count
-	def calcH2(self):
+	def calcH2(self):		# calc heuristic 2 (dist of all out of order tiles 
 		count=int(0)
 		tiles = []
 		for i in range(len(self.state)):
@@ -156,7 +157,7 @@ class Problem(object):
 		#self.goalState=[]
 		#self.goalState.append([])
 		#self.goalState=self.state
-		self.goalState = []
+		self.goalState = []		# Build goal state
 
 		for i in range(0, self.rows*self.columns, columns):
 			inner_list = []
@@ -186,7 +187,7 @@ class Problem(object):
 		return True
 	#def printState(a_state):
 		#print a state in the correct format
-	def deepish_copy(self, a_state):
+	def deepish_copy(self, a_state):	# more efficient method for copying list of lists
 		newState = []
 		for i in a_state:
 			newState.append(list(i))
@@ -219,7 +220,7 @@ class Problem(object):
 		newState[zeroI][zeroJ]=	tmp
 		newState[newI][newJ]=int(0)
 		return newState
-	def getNewNodes(self, a_node):
+	def getNewNodes(self, a_node):	# return new instances of PuzzleNode for all legal moves
 		newNodes = []
 		legalMoves = a_node.getAllMoves()
 		
@@ -231,7 +232,7 @@ class Problem(object):
 		#	print node.state
 		return newNodes
 
-	def printPathToNode(self, a_node):
+	def printPathToNode(self, a_node):	# displays output per output code specified 
 		tmpNode = a_node
 		movesStack= []
 		stateStack = []
@@ -260,14 +261,14 @@ class Problem(object):
 				print
 			#print state
 
-	def haveVisited(self, a_visited, a_state):
-		for visit in a_visited:
-			for i in range(len(a_state)):
-				for j in range (len(a_state[i])):
-					if not visit.state[i][j]==a_state[i][j]:
-						return False
-		return True		
-	def BFS(self, a_node):
+	#def haveVisited(self, a_visited, a_state):	# NOT USED
+	#	for visit in a_visited:
+	#		for i in range(len(a_state)):
+	#			for j in range (len(a_state[i])):
+	#				if not visit.state[i][j]==a_state[i][j]:
+	#					return False
+	#	return True		
+	def BFS(self, a_node):	# Breadth First Search Algorithm
 		queue = Queue.Queue()
 		queue.put(a_node)
 
@@ -297,7 +298,7 @@ class Problem(object):
 					queue.put(newNode)
 		print 'No path found!'
 
-	def DFS(self, a_node):
+	def DFS(self, a_node):	# Depth First search algorithm
 		stack = []
 		stack.append(a_node)
 
@@ -326,7 +327,7 @@ class Problem(object):
 					stack.append(newNode)
 		print 'No Path found!'
 
-	def GBFS(self, a_node):
+	def GBFS(self, a_node):		# Greedy best first search algorithm
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((a_node.heuristic(), a_node))
 		#visited = []
@@ -357,7 +358,7 @@ class Problem(object):
 					pQueue.put((newNode.heuristic(), newNode))
 		print 'No Path found!'
 
-	def AStar(self, a_node):
+	def AStar(self, a_node):	# A* search algorithm
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((a_node.heuristic(), a_node))
 		#visited = []
@@ -399,18 +400,19 @@ class Problem(object):
 	#				yield subitem
 	#			else:
 	#				yield item
-	def flatten(self, aState):
+	def flatten(self, aState):	# flatten list of lists into a tuple for insertion into set
 		newTuple=()
 		for i in range(len(aState)):
 			for j in range(len(aState[i])):
 				newTuple +=(aState[i][j],)
 		return newTuple 
-	def beenTo(self, aSet, aState):
+
+	def beenTo(self, aSet, aState):	# determine set membership
 		if aState in aSet:
 			return True
 		else:
 			return False
-	def UCS(self, a_node):
+	def UCS(self, a_node):		# Uniform cost search
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((0, a_node))
 		#visited = []
@@ -441,7 +443,7 @@ class Problem(object):
 					pQueue.put((newNode.pathCost, newNode))
 		print 'No Path found!'
 
-	def Solve(self, a_node):
+	def Solve(self, a_node):	# Call specified search algorithm
 		if self.algoCode == 1:
 			self.DFS(a_node)
 		if self.algoCode == 2:
@@ -462,6 +464,8 @@ class Problem(object):
 #columns = 3
 #rows = 3
 #file = open('testData.dat')
+
+# LOAD FILE
 i=0
 word_list=[]
 puzzle = []
@@ -474,6 +478,7 @@ algo_code = int(word_list[0])
 heuristic_code = int(word_list[1])
 output_code = int(word_list[2])
 
+#Build initial puzzle state
 for i in xrange (3, rows*columns+3, columns):
 	inner_list = []
 	for x  in xrange(i,i+columns):
@@ -487,7 +492,7 @@ for i in xrange (3, rows*columns+3, columns):
 #print puzzle
 
 myPuzzle = Problem(rows, columns, puzzle, algo_code, heuristic_code, output_code)
-newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState, heuristic_code)
+newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState, heuristic_code) #instantiate initial node
 #print 'puzzleNode state:'
 #print newNode.state
 #myNewMoves=[]
