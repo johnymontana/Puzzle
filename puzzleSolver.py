@@ -13,10 +13,12 @@ rows =3		# change this variable for different numbers of rows in puzzle
 
 import Queue
 import copy
+import sys
 
 class PuzzleNode(object):
 	
-	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost, a_goalState):
+	def __init__(self, a_state, a_parent, a_action, a_columns, a_rows, a_cost, a_goalState, a_hCode):
+		self.hCode = a_hCode
 		self.parent = a_parent
 		self.state = copy.deepcopy(a_state)
 		self.action = copy.copy(a_action)
@@ -205,7 +207,7 @@ class Problem(object):
 		
 		for move in legalMoves:
 			#print 'new move:' + move
-			newNodes.append(PuzzleNode(self.getResult(a_node, move), a_node, copy.copy(move), self.columns, self.rows, copy.copy(a_node.pathCost),self.goalState))
+			newNodes.append(PuzzleNode(self.getResult(a_node, move), a_node, copy.copy(move), self.columns, self.rows, copy.copy(a_node.pathCost),self.goalState, self.hCode))
 		#print 'newNodes from allLegalMoves:'
 		#for node in newNodes:
 		#	print node.state
@@ -213,9 +215,32 @@ class Problem(object):
 
 	def printPathToNode(self, a_node):
 		tmpNode = a_node
-		while not tmpNode == None:
-			print tmpNode.action
+		movesStack= []
+		stateStack = []
+		while not tmpNode.action == None:
+			#print tmpNode.action
+			movesStack.append(tmpNode.action)
+			stateStack.append(tmpNode.state)
 			tmpNode=tmpNode.parent
+		#move = movesStack.pop()
+		stateStack.append(tmpNode.state)
+		if self.outputCode > 0:
+			while len(movesStack)>0:
+				#print move
+				move = movesStack.pop()
+				print move
+		#for move in movesStack:
+		#	print move
+		if self.outputCode > 1:
+			while len(stateStack)>0:
+				state = stateStack.pop()
+				for i in range(len(state)):
+					for j in range(len(state[i])):
+						print state[i][j],
+					print
+				print
+			#print state
+
 	def haveVisited(self, a_visited, a_state):
 		for visit in a_visited:
 			for i in range(len(a_state)):
@@ -319,6 +344,7 @@ class Problem(object):
 					visited.append(newNode)
 					pQueue.put((newNode.h2+newNode.pathCost, copy.deepcopy(newNode)))
 	def UCS(self, a_node):
+		pQueue = Queue.PriorityQueue()
 		pQueue.put((0, a_node))
 		visited = []
 		visited.append(a_node)
@@ -343,26 +369,38 @@ class Problem(object):
 					pQueue.put((newNode.pathCost, copy.deepcopy(newNode)))
 
 
-	#def Solve(self, a_node):
-	#	if 
+	def Solve(self, a_node):
+		if self.algoCode == 1:
+			self.DFS(a_node)
+		if self.algoCode == 2:
+			self.BFS(a_node)
+		if self.algoCode == 3:
+			self.UCS(a_node)
+		if self.algoCode == 4:
+			self.GBFS(a_node)
+		if self.algoCode == 5:
+			self.AStar(a_node)
+
+		#else:
+		#	print 'Algorithm Code not recognized!'
 ###################
 #   BEGIN MAIN    #
 ###################
 
 #columns = 3
 #rows = 3
-file = open('testData.dat')
+#file = open('testData.dat')
 i=0
 word_list=[]
 puzzle = []
-for line in open('testData.dat'):
+for line in open(sys.argv[1]):
 	for word in line.split():
 		word_list.insert(i, word)
 		i=i+1
 
-algo_code = word_list[0]
-heuristic_code = word_list[1]
-output_code = word_list[2]
+algo_code = int(word_list[0])
+heuristic_code = int(word_list[1])
+output_code = int(word_list[2])
 
 for i in xrange (3, rows*columns+3, columns):
 	inner_list = []
@@ -377,7 +415,7 @@ for i in xrange (3, rows*columns+3, columns):
 #print puzzle
 
 myPuzzle = Problem(rows, columns, puzzle, algo_code, heuristic_code, output_code)
-newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState)
+newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState, heuristic_code)
 #print 'puzzleNode state:'
 #print newNode.state
 #myNewMoves=[]
@@ -389,6 +427,5 @@ newNode = PuzzleNode(puzzle, None, None, columns, rows, 0, myPuzzle.goalState)
 #secondNode = PuzzleNode(myPuzzle.getResult(newNode, 'R'), newNode, 'R', columns, rows)
 #secondNode.printState()
 #print secondNode.getAllMoves()
-myPuzzle.AStar(newNode)
-
+myPuzzle.Solve(newNode)
 
