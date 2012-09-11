@@ -181,6 +181,8 @@ class Problem(object):
 	#def printState(a_state):
 		#print a state in the correct format
 
+
+
 	def getResult(self, a_node, a_action):
 		#return a new state given a_state and a_action
 		newState=copy.deepcopy(a_node.state)
@@ -354,7 +356,7 @@ class Problem(object):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
 					h=newNode.heuristic()
-					pQueue.put((h+newNode.pathCost, copy.deepcopy(newNode)))
+					pQueue.put((h+newNode.pathCost, newNode))
 		print 'No path found!'
 
 	def UCS(self, a_node):
