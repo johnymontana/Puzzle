@@ -27,8 +27,14 @@ class PuzzleNode(object):
 
 		self.goalState = a_goalState
 		self.pathCost = a_cost+1
-		self.h1 = self.calcH1()
-		self.h2 = self.calcH2()
+		
+		#self.h1 = self.calcH1()
+		#self.h2 = self.calcH2()
+	def heuristic(self):
+		if self.hCode == 1:
+			return self.calcH1()
+		if self.hCode == 2:
+			return self.calcH2()
 	def calcH1(self):
 		count=int(0)
 		for i in range(len(self.state)):
@@ -260,7 +266,7 @@ class Problem(object):
 			tmpNode = queue.get()
 			if (self.goalTest(tmpNode.state)):
 				print 'PATH FOUND'
-				print 'pathcost: ' + str(tmpNode.pathCost)
+				print 'pathcost: ' + str(tmpNode.pathCost-1)
 				self.printPathToNode(tmpNode)	
 				return True
 			for newNode in self.getNewNodes(tmpNode):
@@ -271,6 +277,7 @@ class Problem(object):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
 					queue.put(copy.deepcopy(newNode))
+		print 'No path found!'
 
 	def DFS(self, a_node):
 		stack = []
@@ -284,6 +291,7 @@ class Problem(object):
 			tmpNode = stack.pop()
 			if (self.goalTest(tmpNode.state)):
 				print 'PATH FOUND'
+				print 'pathcost: ' + str(tmpNode.pathCost-1)
 				self.printPathToNode(tmpNode)	
 				return True
 			for newNode in self.getNewNodes(tmpNode):
@@ -294,10 +302,11 @@ class Problem(object):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
 					stack.append(newNode)
+		print 'No Path found!'
 
 	def GBFS(self, a_node):
 		pQueue = Queue.PriorityQueue()
-		pQueue.put((a_node.h2, a_node))
+		pQueue.put((a_node.heuristic(), a_node))
 		visited = []
 		visited.append(a_node)
 		#print 'starting the while loop'
@@ -308,7 +317,7 @@ class Problem(object):
 			tmpNode = tmpTuple[1]
 			if (self.goalTest(tmpNode.state)):
 				print 'PATH FOUND'
-				print 'pathcost: ' + str(tmpNode.pathCost)
+				print 'pathcost: ' + str(tmpNode.pathCost-1)
 				self.printPathToNode(tmpNode)	
 				return True
 			for newNode in self.getNewNodes(tmpNode):
@@ -318,10 +327,12 @@ class Problem(object):
 				if not self.haveVisited(visited, newNode.state):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
-					pQueue.put((newNode.h2, copy.deepcopy(newNode)))
+					pQueue.put((newNode.heuristic(), copy.deepcopy(newNode)))
+		print 'No Path found!'
+
 	def AStar(self, a_node):
 		pQueue = Queue.PriorityQueue()
-		pQueue.put((a_node.h2, a_node))
+		pQueue.put((a_node.heuristic(), a_node))
 		visited = []
 		visited.append(a_node)
 		#print 'starting the while loop'
@@ -332,7 +343,7 @@ class Problem(object):
 			tmpNode = tmpTuple[1]
 			if (self.goalTest(tmpNode.state)):
 				print 'PATH FOUND'
-				print 'pathcost: ' + str(tmpNode.pathCost)
+				print 'pathcost: ' + str(tmpNode.pathCost-1)
 				self.printPathToNode(tmpNode)	
 				return True
 			for newNode in self.getNewNodes(tmpNode):
@@ -342,7 +353,10 @@ class Problem(object):
 				if not self.haveVisited(visited, newNode.state):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
-					pQueue.put((newNode.h2+newNode.pathCost, copy.deepcopy(newNode)))
+					h=newNode.heuristic()
+					pQueue.put((h+newNode.pathCost, copy.deepcopy(newNode)))
+		print 'No path found!'
+
 	def UCS(self, a_node):
 		pQueue = Queue.PriorityQueue()
 		pQueue.put((0, a_node))
@@ -367,7 +381,7 @@ class Problem(object):
 					#print 'adding a node to the queue'
 					visited.append(newNode)
 					pQueue.put((newNode.pathCost, copy.deepcopy(newNode)))
-
+		print 'No Path found!'
 
 	def Solve(self, a_node):
 		if self.algoCode == 1:
